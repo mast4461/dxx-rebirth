@@ -1213,7 +1213,7 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
 #if DXX_USE_EDITOR
 	if (EditorWindow)
 		Viewer_eye = Viewer->pos;
-	#endif
+#endif
 
 	const auto &&viewer_segp = Segments.vmptridx(Viewer->segnum);
 	auto start_seg_num = find_point_seg(LevelSharedSegmentState, LevelUniqueSegmentState, Viewer_eye, viewer_segp);
@@ -1221,10 +1221,13 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
 	if (start_seg_num==segment_none)
 		start_seg_num = viewer_segp;
 
-	g3_set_view_matrix(Viewer_eye,
+	g3_set_view_matrix(
+    Viewer_eye,
 		(Rear_view && Viewer == ConsoleObject)
-		? vm_matrix_x_matrix(Viewer->orient, vm_angles_2_matrix(vms_angvec{0, 0, INT16_MAX}))
-		: Viewer->orient, Render_zoom);
+      ? vm_matrix_x_matrix(Viewer->orient, vm_angles_2_matrix(vms_angvec{0, 0, INT16_MAX}))
+      : Viewer->orient,
+    Render_zoom
+  );
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
