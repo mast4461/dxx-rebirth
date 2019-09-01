@@ -1181,6 +1181,9 @@ void render_subframe(grs_canvas &canvas, fix eye_offset, window_rendered_data &w
 {
 auto &Objects = LevelUniqueObjectState.Objects;
 	auto &vcobjptridx = Objects.vcptridx;
+
+	gr_set_current_canvas(canvas);
+
 	if (Endlevel_sequence) {
 		render_endlevel_frame(canvas, eye_offset);
 		return;
@@ -1244,6 +1247,7 @@ auto &Objects = LevelUniqueObjectState.Objects;
 //renders onto current canvas
 void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &window)
 {
+  // Render 90° slices in all six directions. All six sides of the "visual cube".
   grs_canvas canv_face_left;
   grs_canvas canv_face_front;
   grs_canvas canv_face_right;
@@ -1251,36 +1255,30 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
   grs_canvas canv_face_back;
   grs_canvas canv_face_bottom;
 
-  fixang m = INT16_MAX;
-  fixang rear_view_orient_z_offset = (Rear_view && Viewer == ConsoleObject) ? m : 0;
+  // The rear view is just an offset in the viewer orientation
+  fixang rear_view_orient_z_offset = (Rear_view && Viewer == ConsoleObject) ? INT16_MAX : 0;
+  fixang m = INT16_MAX / 2;
   
   uint16_t fh = canvas.cv_bitmap.bm_h / 2;
   uint16_t fw = canvas.cv_bitmap.bm_w / 3;
 
+  // Arrange the visual cube faces on screen as
+  // left front right
+  // top  back  bottom
   gr_init_sub_canvas(canv_face_left,   canvas, 0,      0,  fw, fh);
   gr_init_sub_canvas(canv_face_front,  canvas, fw,     0,  fw, fh);
-  gr_init_sub_canvas(canv_face_right,  canvas, fw * 2, 0,  fw, fh);
+  gr_init_sub_canvas(canv_face_right,  canvas, 2 * fw, 0,  fw, fh);
   gr_init_sub_canvas(canv_face_top,    canvas, 0,      fh, fw, fh);
   gr_init_sub_canvas(canv_face_back,   canvas, fw,     fh, fw, fh);
-  gr_init_sub_canvas(canv_face_bottom, canvas, fw * 2, fh, fw, fh);
+  gr_init_sub_canvas(canv_face_bottom, canvas, 2 * fw, fh, fw, fh);
 
-  gr_set_current_canvas(canv_face_left);
-	render_subframe(canv_face_left, eye_offset, window, vms_angvec{0, 0, -m/2 + rear_view_orient_z_offset});
-
-  gr_set_current_canvas(canv_face_front);
-	render_subframe(canv_face_front, eye_offset, window, vms_angvec{0, 0, rear_view_orient_z_offset});
-
-  gr_set_current_canvas(canv_face_right);
-	render_subframe(canv_face_right, eye_offset, window, vms_angvec{0, 0, m/2 + rear_view_orient_z_offset});
-
-  gr_set_current_canvas(canv_face_top);
-	render_subframe(canv_face_top, eye_offset, window, vms_angvec{-m/2, 0, rear_view_orient_z_offset});
-
-  gr_set_current_canvas(canv_face_back);
-	render_subframe(canv_face_back, eye_offset, window, vms_angvec{0, 0, m + rear_view_orient_z_offset});
-
-  gr_set_current_canvas(canv_face_bottom);
-	render_subframe(canv_face_bottom, eye_offset, window, vms_angvec{m/2, 0, rear_view_orient_z_offset});
+  // Render with the correct orientations
+  render_subframe(canv_face_left,   eye_offset, window, vms_angvec{0,   0, -m  + rear_view_orient_z_offset});
+  render_subframe(canv_face_front,  eye_offset, window, vms_angvec{0,   0,       rear_view_orient_z_offset});
+  render_subframe(canv_face_right,  eye_offset, window, vms_angvec{0,   0, m   + rear_view_orient_z_offset});
+  render_subframe(canv_face_top,    eye_offset, window, vms_angvec{-m,  m,       rear_view_orient_z_offset});
+  render_subframe(canv_face_back,   eye_offset, window, vms_angvec{0,  -m, 2*m + rear_view_orient_z_offset});
+  render_subframe(canv_face_bottom, eye_offset, window, vms_angvec{m,   m,       rear_view_orient_z_offset});
 
   gr_set_current_canvas(canvas);
 }
