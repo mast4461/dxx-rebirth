@@ -1177,7 +1177,7 @@ static void build_object_lists(object_array &Objects, fvcsegptr &vcsegptr, const
 int Rear_view=0;
 
 namespace dsx {
-void render_subframe(grs_canvas &canvas, fix eye_offset, window_rendered_data &window, vms_angvec orient_offset)  //draws the world into the provided canvas
+void render_subframe(grs_canvas &canvas, fix eye_offset, window_rendered_data &window, int rx, int ry, int rz)  //draws the world into the provided canvas with the camera rotated by rx, ry and rz
 {
 auto &Objects = LevelUniqueObjectState.Objects;
 	auto &vcobjptridx = Objects.vcptridx;
@@ -1223,6 +1223,15 @@ auto &Objects = LevelUniqueObjectState.Objects;
 	if (start_seg_num==segment_none)
 		start_seg_num = viewer_segp;
 
+	// The rear view is just an offset in the viewer orientation
+	int rear_view_orient_z_offset = (Rear_view && Viewer == ConsoleObject) ? INT16_MAX : 0;
+
+	vms_angvec orient_offset = vms_angvec{
+		static_cast<fixang>(rx),
+		static_cast<fixang>(ry),
+		static_cast<fixang>(rz + rear_view_orient_z_offset)
+	};
+
 	g3_set_view_matrix(
     Viewer_eye,
 		vm_matrix_x_matrix(Viewer->orient, vm_angles_2_matrix(orient_offset)),
@@ -1247,6 +1256,12 @@ auto &Objects = LevelUniqueObjectState.Objects;
 //renders onto current canvas
 void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &window)
 {
+	render_subframe(canvas, eye_offset, window, 0, 0, 0);
+}
+
+//renders onto current canvas
+void render_wideangle_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &window)
+{
 	// Render 90° slices in all six directions. All six sides of the "visual cube".
 	grs_canvas canv_face_left;
 	grs_canvas canv_face_front;
@@ -1255,16 +1270,14 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
 	grs_canvas canv_face_back;
 	grs_canvas canv_face_bottom;
 
-	// The rear view is just an offset in the viewer orientation
-	fixang rear_view_orient_z_offset = (Rear_view && Viewer == ConsoleObject) ? INT16_MAX : 0;
-	fixang m = INT16_MAX / 2;
+	fixang q = INT16_MAX / 2; // q for quarter turn
 	
 	uint16_t fh = canvas.cv_bitmap.bm_h / 2;
 	uint16_t fw = canvas.cv_bitmap.bm_w / 3;
 
 	// Arrange the visual cube faces on screen as
-	// left front right
-	// top  back  bottom
+	// left  front  right
+	// top   back   bottom
 	gr_init_sub_canvas(canv_face_left,   canvas, 0,      0,  fw, fh);
 	gr_init_sub_canvas(canv_face_front,  canvas, fw,     0,  fw, fh);
 	gr_init_sub_canvas(canv_face_right,  canvas, 2 * fw, 0,  fw, fh);
@@ -1273,13 +1286,14 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
 	gr_init_sub_canvas(canv_face_bottom, canvas, 2 * fw, fh, fw, fh);
 
 	// Render with the correct orientations
-	render_subframe(canv_face_left,   eye_offset, window, vms_angvec{0,   0, -m  + rear_view_orient_z_offset});
-	render_subframe(canv_face_front,  eye_offset, window, vms_angvec{0,   0,       rear_view_orient_z_offset});
-	render_subframe(canv_face_right,  eye_offset, window, vms_angvec{0,   0, m   + rear_view_orient_z_offset});
-	render_subframe(canv_face_top,    eye_offset, window, vms_angvec{-m,  m,       rear_view_orient_z_offset});
-	render_subframe(canv_face_back,   eye_offset, window, vms_angvec{0,  -m, 2*m + rear_view_orient_z_offset});
-	render_subframe(canv_face_bottom, eye_offset, window, vms_angvec{m,   m,       rear_view_orient_z_offset});
+	render_subframe(canv_face_left,   eye_offset, window,  0,   0,  -q);
+	render_subframe(canv_face_front,  eye_offset, window,  0,   0,   0);
+	render_subframe(canv_face_right,  eye_offset, window,  0,   0,   q);
+	render_subframe(canv_face_top,    eye_offset, window, -q,   q,   0);
+	render_subframe(canv_face_back,   eye_offset, window,  0,  -q, 2*q);
+	render_subframe(canv_face_bottom, eye_offset, window,  q,   q,   0);
 
+	// Set the current canvas to the provided canvas, because that's the end state of the non-wideangle render function.
 	gr_set_current_canvas(canvas);
 }
 
