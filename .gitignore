@@ -52,3 +52,6 @@ xcuserdata
 # PyCharm generated files #
 ###########################
 .idea
+
+# VSCode generated fils
+.vscode
