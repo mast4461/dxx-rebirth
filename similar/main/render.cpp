@@ -1177,10 +1177,9 @@ static void build_object_lists(object_array &Objects, fvcsegptr &vcsegptr, const
 int Rear_view=0;
 
 namespace dsx {
-//renders onto current canvas
-void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &window)
+void render_subframe(grs_canvas &canvas, fix eye_offset, window_rendered_data &window, vms_angvec orient_offset)  //draws the world into the provided canvas
 {
-	auto &Objects = LevelUniqueObjectState.Objects;
+auto &Objects = LevelUniqueObjectState.Objects;
 	auto &vcobjptridx = Objects.vcptridx;
 	if (Endlevel_sequence) {
 		render_endlevel_frame(canvas, eye_offset);
@@ -1223,9 +1222,7 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
 
 	g3_set_view_matrix(
     Viewer_eye,
-		(Rear_view && Viewer == ConsoleObject)
-      ? vm_matrix_x_matrix(Viewer->orient, vm_angles_2_matrix(vms_angvec{0, 0, INT16_MAX}))
-      : Viewer->orient,
+		vm_matrix_x_matrix(Viewer->orient, vm_angles_2_matrix(orient_offset)),
     Render_zoom
   );
 
@@ -1242,6 +1239,13 @@ void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &wind
    //RenderingType=0;
 
 	// -- Moved from here by MK, 05/17/95, wrong if multiple renders/frame! FrameCount++;		//we have rendered a frame
+}
+
+//renders onto current canvas
+void render_frame(grs_canvas &canvas, fix eye_offset, window_rendered_data &window)
+{
+  fixang rear_view_orient_z_offset = (Rear_view && Viewer == ConsoleObject) ? INT16_MAX : 0;
+	render_subframe(canvas, eye_offset, window, vms_angvec{0, 0, rear_view_orient_z_offset});
 }
 
 #if defined(DXX_BUILD_DESCENT_II)
