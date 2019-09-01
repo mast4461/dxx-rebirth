@@ -103,7 +103,7 @@ const object * Viewer = NULL;
 #if !DXX_USE_EDITOR && defined(RELEASE)
 constexpr
 #endif
-fix Render_zoom = 0x9000;					//the player's zoom factor
+fix Render_zoom = f1_0;					//the player's zoom factor
 
 #ifndef NDEBUG
 static std::bitset<MAX_OBJECTS> object_rendered;
