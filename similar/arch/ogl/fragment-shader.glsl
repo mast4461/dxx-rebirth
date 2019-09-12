@@ -7,10 +7,6 @@ uniform samplerCube u_cubeMap;
 // the texCoords passed in from the vertex shader.
 varying vec2 v_texCoord;
 
-struct SamplingTarget {
-  int i_s;
-  vec2 uv;
-};
 void main() {
   // Extract relative screen coordinates from texCoord vector
   float u = v_texCoord.x;

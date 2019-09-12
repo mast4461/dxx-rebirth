@@ -87,6 +87,16 @@ extern PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
 extern PFNGLGETSHADERIVPROC glGetShaderiv;
 extern PFNGLLINKPROGRAMPROC glLinkProgram;
 extern PFNGLSHADERSOURCEPROC glShaderSource;
+extern PFNGLUSEPROGRAMPROC glUseProgram;
+extern PFNGLGENBUFFERSPROC glGenBuffers;
+extern PFNGLBINDBUFFERPROC glBindBuffer;
+extern PFNGLBUFFERDATAPROC glBufferData;
+extern PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+extern PFNGLUNIFORM2FPROC glUniform2f;
+extern PFNGLUNIFORM1IPROC glUniform1i;
 
 /* Global initialization:
  * will need an OpenGL context and intialize all function pointers.

@@ -42,6 +42,16 @@ PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
 PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
 PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
 PFNGLSHADERSOURCEPROC glShaderSource = NULL;
+PFNGLUSEPROGRAMPROC glUseProgram = NULL;
+PFNGLGENBUFFERSPROC glGenBuffers = NULL;
+PFNGLBINDBUFFERPROC glBindBuffer = NULL;
+PFNGLBUFFERDATAPROC glBufferData = NULL;
+PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation = NULL;
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
+PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
+PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
+PFNGLUNIFORM2FPROC glUniform2f = NULL;
+PFNGLUNIFORM1IPROC glUniform1i = NULL;
 
 /* GL_EXT_texture_filter_anisotropic */
 GLfloat ogl_maxanisotropy = 0.0f;
@@ -169,8 +179,18 @@ void ogl_extensions_init()
     glGetShaderiv = reinterpret_cast<PFNGLGETSHADERIVPROC>(SDL_GL_GetProcAddress("glGetShaderiv"));
     glLinkProgram = reinterpret_cast<PFNGLLINKPROGRAMPROC>(SDL_GL_GetProcAddress("glLinkProgram"));
     glShaderSource = reinterpret_cast<PFNGLSHADERSOURCEPROC>(SDL_GL_GetProcAddress("glShaderSource"));
+    glUseProgram = reinterpret_cast<PFNGLUSEPROGRAMPROC>(SDL_GL_GetProcAddress("glUseProgram"));
+    glGenBuffers = reinterpret_cast<PFNGLGENBUFFERSPROC>(SDL_GL_GetProcAddress("glGenBuffers"));
+    glBindBuffer = reinterpret_cast<PFNGLBINDBUFFERPROC>(SDL_GL_GetProcAddress("glBindBuffer"));
+    glBufferData = reinterpret_cast<PFNGLBUFFERDATAPROC>(SDL_GL_GetProcAddress("glBufferData"));
+    glGetAttribLocation = reinterpret_cast<PFNGLGETATTRIBLOCATIONPROC>(SDL_GL_GetProcAddress("glGetAttribLocation"));
+    glEnableVertexAttribArray = reinterpret_cast<PFNGLENABLEVERTEXATTRIBARRAYPROC>(SDL_GL_GetProcAddress("glEnableVertexAttribArray"));
+    glVertexAttribPointer = reinterpret_cast<PFNGLVERTEXATTRIBPOINTERPROC>(SDL_GL_GetProcAddress("glVertexAttribPointer"));
+    glGetUniformLocation = reinterpret_cast<PFNGLGETUNIFORMLOCATIONPROC>(SDL_GL_GetProcAddress("glGetUniformLocation"));
+    glUniform2f = reinterpret_cast<PFNGLUNIFORM2FPROC>(SDL_GL_GetProcAddress("glUniform2f"));
+    glUniform1i = reinterpret_cast<PFNGLUNIFORM1IPROC>(SDL_GL_GetProcAddress("glUniform1i"));
   }
-  if (glCreateShader && glShaderSource && glCompileShader) {
+  if (glCreateShader && glShaderSource && glCompileShader) { // TODO: check all?
 		ogl_have_shaders=true;
 		s = "DXX-Rebirth: OpenGL: GL_ARB_vertex_shader available";
 	} else {
