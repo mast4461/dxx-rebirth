@@ -268,6 +268,17 @@ void g3_draw_rod_tmap(grs_canvas &, grs_bitmap &bitmap, const g3s_point &bot_poi
 //returns 1 if off screen, 0 if drew
 void g3_draw_bitmap(grs_canvas &, const vms_vector &pos, fix width, fix height, grs_bitmap &bm);
 
+// Draws a wideangle view into canvas from a cubemap consisting of the faces using shaders
+void g3_draw_cubemap_wideangle(
+  grs_canvas &canvas,
+  grs_canvas &canv_face_left,
+  grs_canvas &canv_face_front,
+  grs_canvas &canv_face_right,
+  grs_canvas &canv_face_top,
+  grs_canvas &canv_face_back,
+  grs_canvas &canv_face_bottom
+);
+
 //specifies 2d drawing routines to use instead of defaults.  Passing
 //NULL for either or both restores defaults
 #if DXX_USE_OGL

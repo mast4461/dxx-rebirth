@@ -32,6 +32,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "ogl_init.h"
 #include "3d.h"
 #include "piggy.h"
 #include "common/3d/globvars.h"
@@ -130,6 +131,18 @@ static int r_polyc,r_tpolyc,r_bitmapc,r_ubitbltc;
 /* I assume this ought to be >= MAX_BITMAP_FILES in piggy.h? */
 static array<ogl_texture, 20000> ogl_texture_list;
 static int ogl_texture_list_cur;
+
+/* For shaders */
+bool shader_compilation_tried = false;
+bool shader_compilation_successful = false;
+
+const std::string vertex_shader_source =
+#include "vertex-shader.glsl"
+;
+
+const std::string fragment_shader_source =
+#include "fragment-shader.glsl"
+;
 
 /* some function prototypes */
 
@@ -1134,6 +1147,142 @@ void g3_draw_bitmap(grs_canvas &canvas, const vms_vector &pos, const fix iwidth,
 	glColorPointer(4, GL_FLOAT, 0, color_array.data());
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array.data());
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Replaced GL_QUADS
+}
+
+void g3_draw_cubemap_wideangle(
+  grs_canvas &canvas,
+  grs_canvas &canv_face_left,
+  grs_canvas &canv_face_front,
+  grs_canvas &canv_face_right,
+  grs_canvas &canv_face_top,
+  grs_canvas &canv_face_back,
+  grs_canvas &canv_face_bottom
+){
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.gltexture);
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.gltexture);
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_w, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.gltexture);
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_w,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.gltexture);
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.gltexture);
+  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.gltexture);
+
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  if (!shader_compilation_tried) {
+    shader_compilation_tried = true;
+
+    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    const char *vs_c_str = vertex_shader_source.c_str();
+    glShaderSource(vertex_shader, 1, &vs_c_str, NULL);
+    glCompileShader(vertex_shader);
+
+    GLint isCompiled = 0;
+    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &isCompiled);
+    if(isCompiled == GL_FALSE)
+    {
+      GLint maxLength = 0;
+      glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &maxLength);
+
+      // The maxLength includes the NULL character
+      std::vector<GLchar> infoLog(maxLength);
+      glGetShaderInfoLog(vertex_shader, maxLength, &maxLength, &infoLog[0]);
+      
+      // We don't need the shader anymore.
+      glDeleteShader(vertex_shader);
+
+      con_puts(CON_VERBOSE, "vertex shader:");
+      con_puts(CON_VERBOSE, &infoLog[0]);
+      return;
+    }
+
+    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    const char *fs_c_str = fragment_shader_source.c_str();
+    glShaderSource(fragment_shader, 1, &fs_c_str, NULL);
+    glCompileShader(fragment_shader);
+
+    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &isCompiled);
+    if (isCompiled == GL_FALSE)
+    {
+      GLint maxLength = 0;
+      glGetShaderiv(fragment_shader, GL_INFO_LOG_LENGTH, &maxLength);
+
+      // The maxLength includes the NULL character
+      std::vector<GLchar> infoLog(maxLength);
+      glGetShaderInfoLog(fragment_shader, maxLength, &maxLength, &infoLog[0]);
+      
+      // We don't need the shader anymore.
+      glDeleteShader(fragment_shader);
+      // Either of them. Don't leak shaders.
+      glDeleteShader(vertex_shader);
+
+      con_puts(CON_VERBOSE, "fragment shader:");
+      con_puts(CON_VERBOSE, &infoLog[0]);
+      return;
+    }
+
+    // Vertex and fragment shaders are successfully compiled.
+    // Now time to link them together into a program.
+    // Get a program object.
+    GLuint program = glCreateProgram();
+
+    // Attach our shaders to our program
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+
+    // Link our program
+    glLinkProgram(program);
+
+    // Note the different functions here: glGetProgram* instead of glGetShader*.
+    GLint isLinked = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+    if (isLinked == GL_FALSE)
+    {
+      GLint maxLength = 0;
+      glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+      // The maxLength includes the NULL character
+      std::vector<GLchar> infoLog(maxLength);
+      glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+      
+      // We don't need the program anymore.
+      glDeleteProgram(program);
+      // Don't leak shaders either.
+      glDeleteShader(vertex_shader);
+      glDeleteShader(fragment_shader);
+
+      con_puts(CON_VERBOSE, &infoLog[0]);
+      return;
+    }
+
+    // Always detach shaders after a successful link.
+    glDetachShader(program, vertex_shader);
+    glDetachShader(program, fragment_shader);
+
+    char string[50];
+    sprintf(string, "%dx%d", canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
+    con_puts(CON_VERBOSE, &string[0]);
+
+    shader_compilation_successful = true;
+  }
+
+  if (shader_compilation_successful) {
+    // Draw with the shaders!
+  }
+  
+
+  // TODO:
+  // 1. vertex and fragment shaders
+  // 2. use shaders
+  // 3. bind texture
+  // 4. bind vertex array
+  // 5. draw array
 }
 
 /*

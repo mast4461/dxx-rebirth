@@ -15,8 +15,10 @@
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
 #else
 #include <GL/gl.h>
+#include <GL/glext.h>
 #endif
 
 /* global extension stuff (from glext.h)
@@ -70,6 +72,21 @@ extern PFNGLFENCESYNCPROC glFenceSyncFunc;
 extern PFNGLDELETESYNCPROC glDeleteSyncFunc;
 extern PFNGLCLIENTWAITSYNCPROC glClientWaitSyncFunc;
 extern GLfloat ogl_maxanisotropy;
+
+extern bool ogl_have_shaders;
+extern PFNGLATTACHSHADERPROC glAttachShader;
+extern PFNGLCOMPILESHADERPROC glCompileShader;
+extern PFNGLCREATEPROGRAMPROC glCreateProgram;
+extern PFNGLCREATESHADERPROC glCreateShader;
+extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
+extern PFNGLDELETESHADERPROC glDeleteShader;
+extern PFNGLDETACHSHADERPROC glDetachShader;
+extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+extern PFNGLGETSHADERIVPROC glGetProgramiv;
+extern PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+extern PFNGLGETSHADERIVPROC glGetShaderiv;
+extern PFNGLLINKPROGRAMPROC glLinkProgram;
+extern PFNGLSHADERSOURCEPROC glShaderSource;
 
 /* Global initialization:
  * will need an OpenGL context and intialize all function pointers.

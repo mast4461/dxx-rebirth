@@ -1272,18 +1272,17 @@ void render_wideangle_frame(grs_canvas &canvas, fix eye_offset, window_rendered_
 
 	fixang q = INT16_MAX / 2; // q for quarter turn
 	
-	uint16_t fh = canvas.cv_bitmap.bm_h / 2;
-	uint16_t fw = canvas.cv_bitmap.bm_w / 3;
+	uint16_t fs = min(canvas.cv_bitmap.bm_h / 2, canvas.cv_bitmap.bm_w / 3);
 
 	// Arrange the visual cube faces on screen as
 	// left  front  right
 	// top   back   bottom
-	gr_init_sub_canvas(canv_face_left,   canvas, 0,      0,  fw, fh);
-	gr_init_sub_canvas(canv_face_front,  canvas, fw,     0,  fw, fh);
-	gr_init_sub_canvas(canv_face_right,  canvas, 2 * fw, 0,  fw, fh);
-	gr_init_sub_canvas(canv_face_top,    canvas, 0,      fh, fw, fh);
-	gr_init_sub_canvas(canv_face_back,   canvas, fw,     fh, fw, fh);
-	gr_init_sub_canvas(canv_face_bottom, canvas, 2 * fw, fh, fw, fh);
+	gr_init_sub_canvas(canv_face_left,   canvas, 0,      0,  fs, fs);
+	gr_init_sub_canvas(canv_face_front,  canvas, fs,     0,  fs, fs);
+	gr_init_sub_canvas(canv_face_right,  canvas, 2 * fs, 0,  fs, fs);
+	gr_init_sub_canvas(canv_face_top,    canvas, 0,      fs, fs, fs);
+	gr_init_sub_canvas(canv_face_back,   canvas, fs,     fs, fs, fs);
+	gr_init_sub_canvas(canv_face_bottom, canvas, 2 * fs, fs, fs, fs);
 
 	// Render with the correct orientations
 	render_subframe(canv_face_left,   eye_offset, window,  0,   0,  -q);
@@ -1295,6 +1294,14 @@ void render_wideangle_frame(grs_canvas &canvas, fix eye_offset, window_rendered_
 
 	// Set the current canvas to the provided canvas, because that's the end state of the non-wideangle render function.
 	gr_set_current_canvas(canvas);
+
+
+#if DXX_USE_OGL
+  // create/fill cubemap texture
+  // set shader
+  // draw polygon
+  g3_draw_cubemap_wideangle(canvas, canv_face_left, canv_face_front, canv_face_right, canv_face_top, canv_face_back, canv_face_bottom);
+#endif
 }
 
 #if defined(DXX_BUILD_DESCENT_II)

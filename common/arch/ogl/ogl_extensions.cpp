@@ -27,6 +27,22 @@ PFNGLFENCESYNCPROC glFenceSyncFunc = NULL;
 PFNGLDELETESYNCPROC glDeleteSyncFunc = NULL;
 PFNGLCLIENTWAITSYNCPROC glClientWaitSyncFunc = NULL;
 
+/* GL_ARB_vertex_shader */
+bool ogl_have_shaders = false;
+PFNGLATTACHSHADERPROC glAttachShader = NULL;
+PFNGLCOMPILESHADERPROC glCompileShader = NULL;
+PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
+PFNGLCREATESHADERPROC glCreateShader = NULL;
+PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
+PFNGLDELETESHADERPROC glDeleteShader = NULL;
+PFNGLDETACHSHADERPROC glDetachShader = NULL;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
+PFNGLGETSHADERIVPROC glGetProgramiv = NULL;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
+PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
+PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
+PFNGLSHADERSOURCEPROC glShaderSource = NULL;
+
 /* GL_EXT_texture_filter_anisotropic */
 GLfloat ogl_maxanisotropy = 0.0f;
 
@@ -135,6 +151,30 @@ void ogl_extensions_init()
 		s = "DXX-Rebirth: OpenGL: GL_ARB_sync available";
 	} else {
 		s = "DXX-Rebirth: OpenGL: GL_ARB_sync not available";
+	}
+	con_puts(CON_VERBOSE, s);
+
+  /* GL_ARB_vertex_shader */
+  if (is_supported(extension_str, version, "GL_ARB_vertex_shader", -1, -1, -1, -1)) {
+    glAttachShader = reinterpret_cast<PFNGLATTACHSHADERPROC>(SDL_GL_GetProcAddress("glAttachShader"));
+    glCompileShader = reinterpret_cast<PFNGLCOMPILESHADERPROC>(SDL_GL_GetProcAddress("glCompileShader"));
+    glCreateProgram = reinterpret_cast<PFNGLCREATEPROGRAMPROC>(SDL_GL_GetProcAddress("glCreateProgram"));
+    glCreateShader = reinterpret_cast<PFNGLCREATESHADERPROC>(SDL_GL_GetProcAddress("glCreateShader"));
+    glDeleteProgram = reinterpret_cast<PFNGLDELETEPROGRAMPROC>(SDL_GL_GetProcAddress("glDeleteProgram"));
+    glDeleteShader = reinterpret_cast<PFNGLDELETESHADERPROC>(SDL_GL_GetProcAddress("glDeleteShader"));
+    glDetachShader = reinterpret_cast<PFNGLDETACHSHADERPROC>(SDL_GL_GetProcAddress("glDetachShader"));
+    glGetProgramInfoLog = reinterpret_cast<PFNGLGETPROGRAMINFOLOGPROC>(SDL_GL_GetProcAddress("glGetProgramInfoLog"));
+    glGetProgramiv = reinterpret_cast<PFNGLGETSHADERIVPROC>(SDL_GL_GetProcAddress("glGetProgramiv"));
+    glGetShaderInfoLog = reinterpret_cast<PFNGLGETSHADERINFOLOGPROC>(SDL_GL_GetProcAddress("glGetShaderInfoLog"));
+    glGetShaderiv = reinterpret_cast<PFNGLGETSHADERIVPROC>(SDL_GL_GetProcAddress("glGetShaderiv"));
+    glLinkProgram = reinterpret_cast<PFNGLLINKPROGRAMPROC>(SDL_GL_GetProcAddress("glLinkProgram"));
+    glShaderSource = reinterpret_cast<PFNGLSHADERSOURCEPROC>(SDL_GL_GetProcAddress("glShaderSource"));
+  }
+  if (glCreateShader && glShaderSource && glCompileShader) {
+		ogl_have_shaders=true;
+		s = "DXX-Rebirth: OpenGL: GL_ARB_vertex_shader available";
+	} else {
+		s = "DXX-Rebirth: OpenGL: GL_ARB_vertex_shader not available";
 	}
 	con_puts(CON_VERBOSE, s);
 }
