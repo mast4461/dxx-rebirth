@@ -145,6 +145,7 @@ const std::string fragment_shader_source =
 ;
 
 GLint original_program_id = 0;
+GLint original_array_buffer_id = 0;
 GLuint program_id = 0;
 GLuint cubemap_id = 0;
 GLuint vertex_buffer_id = 0;
@@ -1168,6 +1169,7 @@ void g3_draw_cubemap_wideangle(
 ){
   if (!shader_compilation_tried) {
     glGetIntegerv(GL_ACTIVE_PROGRAM, &original_program_id);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &original_array_buffer_id);
     // get texture, reset later
     // get buffer, reset later
 
@@ -1178,25 +1180,22 @@ void g3_draw_cubemap_wideangle(
     glGenBuffers(1, &vertex_buffer_id); // Create a buffer to put 2d clip space points in
 
     // Bind the vertex buffer
-    // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
 
     // Set a rectangle the same size as the image.
-    // float vertices[] = {
-    //   -1.0f, -1.0f,
-    //    1.0f, -1.0f,
-    //   -1.0f,  1.0f,
-    //   -1.0f,  1.0f,
-    //    1.0f, -1.0f,
-    //    1.0f,  1.0f
-    // };  
+    float vertices[] = {
+      -1.0f, -1.0f,
+       1.0f, -1.0f,
+      -1.0f,  1.0f,
+      -1.0f,  1.0f,
+       1.0f, -1.0f,
+       1.0f,  1.0f
+    };  
 
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // Configure the atribute pointer.
-    // glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Turn on the position attribute
-    // glEnableVertexAttribArray(a_position_location);
+    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     // The shader stuff
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -1299,7 +1298,7 @@ void g3_draw_cubemap_wideangle(
 
   if (program_id && shader_compilation_successful) {
     // Bind the cubemap texture and set its data
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
 
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.bm_data);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.bm_data);
@@ -1307,19 +1306,6 @@ void g3_draw_cubemap_wideangle(
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_w,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.bm_data);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
-
-    uint8_t bytes1[]={0xff,0x00,0x00,0x88};
-    uint8_t bytes2[]={0x00,0xff,0x00,0x88};
-    uint8_t bytes3[]={0x00,0x00,0xff,0x88};
-    uint8_t bytes4[]={0x00,0xff,0xff,0x88};
-    uint8_t bytes5[]={0xff,0x00,0xff,0x88};
-    uint8_t bytes6[]={0xff,0xff,0x00,0x88};
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes1);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes2);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes3);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes4);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes5);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes6);
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1329,19 +1315,21 @@ void g3_draw_cubemap_wideangle(
 
 
     // Draw with the shaders!
-    //glUseProgram(program_id);
-
-    // Bind the vertex buffer
-    //glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+    glUseProgram(program_id);
+    glEnableVertexAttribArray(a_position_location);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
 
     glUniform2f(u_resolution_location, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
     
     // glViewport(canvas.cv_bitmap.bm_x, canvas.cv_bitmap.bm_y, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
     glUniform1i(u_cubemap_location, cubemap_id);
 
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    //glUseProgram(original_program_id);
+    // Restore OpenGL state
+    glUseProgram(original_program_id);
+    glBindBuffer(GL_ARRAY_BUFFER, original_array_buffer_id);
+    glDisableVertexAttribArray(a_position_location);
   }
   
 
