@@ -1307,12 +1307,25 @@ void g3_draw_cubemap_wideangle(
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_h,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_h,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
 
+    uint16_t bytes0[] = {0xff, 0x00, 0x00, 0x88};
+    uint16_t bytes1[] = {0x00, 0xff, 0x00, 0x88};
+    uint16_t bytes2[] = {0x00, 0x00, 0xff, 0x88};
+    uint16_t bytes3[] = {0x00, 0xff, 0xff, 0x88};
+    uint16_t bytes4[] = {0xff, 0x00, 0xff, 0x88};
+    uint16_t bytes5[] = {0xff, 0xff, 0x00, 0x88};
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes0);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes1);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes2);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes3);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes4);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes5);
+
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
 
     // Draw with the shaders!
     glUseProgram(program_id);
@@ -1331,14 +1344,6 @@ void g3_draw_cubemap_wideangle(
     glBindBuffer(GL_ARRAY_BUFFER, original_array_buffer_id);
     glDisableVertexAttribArray(a_position_location);
   }
-  
-
-  // TODO:
-  // 1. vertex and fragment shaders
-  // 2. use shaders
-  // 3. bind texture
-  // 4. bind vertex array
-  // 5. draw array
 }
 
 /*

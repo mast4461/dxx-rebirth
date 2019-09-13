@@ -23,7 +23,8 @@ void main() {
   float zt = cos(theta);
 
   // Sample cubemap
-  gl_FragColor = vec4(textureCube(u_cubemap, vec3(xt, yt, zt)).xyz, 0.5);
-  //gl_FragColor = vec4(0.5 + xt *0.5, 0.5 + yt * 0.5, 0.5 + zt * 0.5, 0.5);
+  vec4 cubemapSample = textureCube(u_cubemap, vec3(xt, yt, zt));
+  vec4 angleColors = vec4(0.5 + xt *0.5, 0.5 + yt * 0.5, 0.5 + zt * 0.5, 0.5);
+  gl_FragColor = vec4(cubemapSample.xyz * 0.7 + angleColors.xyz * 0.3, 0.7);
 }
 )""
