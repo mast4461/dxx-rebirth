@@ -1300,12 +1300,12 @@ void g3_draw_cubemap_wideangle(
     // Bind the cubemap texture and set its data
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
 
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_w, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_w,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_h,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_h,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_h,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_h,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_h,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
