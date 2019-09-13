@@ -144,7 +144,13 @@ const std::string fragment_shader_source =
 #include "fragment-shader.glsl"
 ;
 
-GLuint program = 0;
+GLint original_program_id = 0;
+GLuint program_id = 0;
+GLuint cubemap_id = 0;
+GLuint vertex_buffer_id = 0;
+GLint a_position_location = 0;
+GLint u_resolution_location = 0;
+GLint u_cubemap_location = 0;
 
 /* some function prototypes */
 
@@ -1160,26 +1166,39 @@ void g3_draw_cubemap_wideangle(
   grs_canvas &canv_face_back,
   grs_canvas &canv_face_bottom
 ){
-  unsigned int cubemap;
-  glGenTextures(1, &cubemap);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.gltexture);
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.gltexture);
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_w, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.gltexture);
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_w,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.gltexture);
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.gltexture);
-  glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.gltexture);
-
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
   if (!shader_compilation_tried) {
+    glGetIntegerv(GL_ACTIVE_PROGRAM, &original_program_id);
+    // get texture, reset later
+    // get buffer, reset later
+
     shader_compilation_tried = true;
 
+    // Initialize textures, buffers etc.
+    glGenTextures(1, &cubemap_id);
+    glGenBuffers(1, &vertex_buffer_id); // Create a buffer to put 2d clip space points in
+
+    // Bind the vertex buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+
+    // Set a rectangle the same size as the image.
+    float vertices[] = {
+      -1.0f, -1.0f,
+       1.0f, -1.0f,
+      -1.0f,  1.0f,
+      -1.0f,  1.0f,
+       1.0f, -1.0f,
+       1.0f,  1.0f
+    };  
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Configure the atribute pointer.
+    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // Turn on the position attribute
+    glEnableVertexAttribArray(a_position_location);
+
+    // The shader stuff
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     const char *vs_c_str = vertex_shader_source.c_str();
     glShaderSource(vertex_shader, 1, &vs_c_str, NULL);
@@ -1232,29 +1251,29 @@ void g3_draw_cubemap_wideangle(
     // Vertex and fragment shaders are successfully compiled.
     // Now time to link them together into a program.
     // Get a program object.
-    program = glCreateProgram();
+    program_id = glCreateProgram();
 
     // Attach our shaders to our program
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
+    glAttachShader(program_id, vertex_shader);
+    glAttachShader(program_id, fragment_shader);
 
     // Link our program
-    glLinkProgram(program);
+    glLinkProgram(program_id);
 
     // Note the different functions here: glGetProgram* instead of glGetShader*.
     GLint isLinked = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+    glGetProgramiv(program_id, GL_LINK_STATUS, &isLinked);
     if (isLinked == GL_FALSE)
     {
       GLint maxLength = 0;
-      glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+      glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &maxLength);
 
       // The maxLength includes the NULL character
       std::vector<GLchar> infoLog(maxLength);
-      glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+      glGetProgramInfoLog(program_id, maxLength, &maxLength, &infoLog[0]);
       
       // We don't need the program anymore.
-      glDeleteProgram(program);
+      glDeleteProgram(program_id);
       // Don't leak shaders either.
       glDeleteShader(vertex_shader);
       glDeleteShader(fragment_shader);
@@ -1264,56 +1283,65 @@ void g3_draw_cubemap_wideangle(
     }
 
     // Always detach shaders after a successful link. The program is not affected as it has been linked.
-    glDetachShader(program, vertex_shader);
-    glDetachShader(program, fragment_shader);
+    glDetachShader(program_id, vertex_shader);
+    glDetachShader(program_id, fragment_shader);
+
+    a_position_location = glGetAttribLocation(program_id, "a_position");
+    u_resolution_location = glGetUniformLocation(program_id, "u_resolution");
+    u_cubemap_location = glGetUniformLocation(program_id, "u_cubemap");
 
     char string[50];
-    sprintf(string, "%dx%d", canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
+    sprintf(string, "Res: %dx%d. Original program id: %d", canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h, original_program_id);
     con_puts(CON_VERBOSE, &string[0]);
 
     shader_compilation_successful = true;
   }
 
-  if (program && shader_compilation_successful) {
-    // Draw with the shaders!
-    glUseProgram(program);
+  if (program_id && shader_compilation_successful) {
+    // Bind the cubemap texture and set its data
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
 
-    // Create a buffer to put 2d clip space points in
-    GLuint vertex_buffer;
-    glGenBuffers(1, &vertex_buffer); 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_w, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_w,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_w,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_w,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
+
+    uint8_t bytes1[]={0xff,0x00,0x00,0x88};
+    uint8_t bytes2[]={0x00,0xff,0x00,0x88};
+    uint8_t bytes3[]={0x00,0x00,0xff,0x88};
+    uint8_t bytes4[]={0x00,0xff,0xff,0x88};
+    uint8_t bytes5[]={0xff,0x00,0xff,0x88};
+    uint8_t bytes6[]={0xff,0xff,0x00,0x88};
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes1);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes2);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes3);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes4);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes5);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes6);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+
+    // Draw with the shaders!
+    glUseProgram(program_id);
 
     // Bind the vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
 
-    // Set a rectangle the same size as the image.
-    float vertices[] = {
-      -1.0f, -1.0f,
-       1.0f, -1.0f,
-      -1.0f,  1.0f,
-      -1.0f,  1.0f,
-       1.0f, -1.0f,
-       1.0f,  1.0f
-    };  
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    GLint a_position_location = glGetAttribLocation(program, "a_position");
-
-    // Configure the atribute pointer.
-    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Turn on the position attribute
-    glEnableVertexAttribArray(a_position_location);
-
-    GLint u_resolution_location = glGetUniformLocation(program, "u_resolution");
     glUniform2f(u_resolution_location, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
     
-    glViewport(canvas.cv_bitmap.bm_x, canvas.cv_bitmap.bm_y, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
-
-    GLint u_cubemap_location = glGetUniformLocation(program, "u_cubemap");
-    glUniform1i(u_cubemap_location, 0);
+    // glViewport(canvas.cv_bitmap.bm_x, canvas.cv_bitmap.bm_y, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
+    glUniform1i(u_cubemap_location, cubemap_id);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glUseProgram(original_program_id);
   }
   
 
