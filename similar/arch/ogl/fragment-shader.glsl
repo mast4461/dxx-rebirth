@@ -1,5 +1,6 @@
 R""(
-#define TAU 6.283185307179586 // Two pi
+#define PI 3.1415926535897932384626433832795
+#define ZOOM 0.5
 
 // our textures
 uniform samplerCube u_cubemap;
@@ -14,7 +15,7 @@ void main() {
 
   // Calculate spherical coordinates
   float phi = atan(v, u);
-  float theta = TAU * sqrt(u*u + v*v);
+  float theta = PI * sqrt(u*u + v*v);
 
   // Convert spherical coordinates to cartesian coordinates
   float minusSinTheta = -sin(theta);
@@ -23,8 +24,6 @@ void main() {
   float zt = cos(theta);
 
   // Sample cubemap
-  vec4 cubemapSample = textureCube(u_cubemap, vec3(xt, yt, zt));
-  vec4 angleColors = vec4(0.5 + xt *0.5, 0.5 + yt * 0.5, 0.5 + zt * 0.5, 0.5);
-  gl_FragColor = vec4(cubemapSample.xyz * 0.7 + angleColors.xyz * 0.3, 0.7);
+  gl_FragColor = textureCube(u_cubemap, vec3(xt, yt, zt + ZOOM));
 }
 )""

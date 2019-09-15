@@ -146,6 +146,7 @@ const std::string fragment_shader_source =
 
 GLint original_program_id = 0;
 GLint original_array_buffer_id = 0;
+GLint original_read_buffer_id = 0;
 GLuint program_id = 0;
 GLuint cubemap_id = 0;
 GLuint vertex_buffer_id = 0;
@@ -1170,6 +1171,7 @@ void g3_draw_cubemap_wideangle(
   if (!shader_compilation_tried) {
     glGetIntegerv(GL_ACTIVE_PROGRAM, &original_program_id);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &original_array_buffer_id);
+    glGetIntegerv(GL_READ_BUFFER, &original_read_buffer_id);
     // get texture, reset later
     // get buffer, reset later
 
@@ -1299,27 +1301,33 @@ void g3_draw_cubemap_wideangle(
   if (program_id && shader_compilation_successful) {
     // Bind the cubemap texture and set its data
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+    glGetIntegerv(GL_READ_BUFFER, &original_read_buffer_id);
+    glReadBuffer(GL_BACK);
 
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, canv_face_right.cv_bitmap.bm_w,  canv_face_right.cv_bitmap.bm_h,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_right.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, canv_face_left.cv_bitmap.bm_w,   canv_face_left.cv_bitmap.bm_h,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_left.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, canv_face_bottom.cv_bitmap.bm_w, canv_face_bottom.cv_bitmap.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_bottom.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, canv_face_top.cv_bitmap.bm_w,    canv_face_top.cv_bitmap.bm_h,    0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_top.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, canv_face_back.cv_bitmap.bm_w,   canv_face_back.cv_bitmap.bm_h,   0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_back.cv_bitmap.bm_data);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, canv_face_front.cv_bitmap.bm_w,  canv_face_front.cv_bitmap.bm_h,  0, GL_RGB, GL_UNSIGNED_BYTE, canv_face_front.cv_bitmap.bm_data);
+    auto bmnx = canv_face_right.cv_bitmap;
+    auto bmpx = canv_face_left.cv_bitmap;
+    auto bmny = canv_face_bottom.cv_bitmap;
+    auto bmpy = canv_face_top.cv_bitmap;
+    auto bmnz = canv_face_back.cv_bitmap;
+    auto bmpz = canv_face_front.cv_bitmap;
 
-    uint16_t bytes0[] = {0xff, 0x00, 0x00, 0x88};
-    uint16_t bytes1[] = {0x00, 0xff, 0x00, 0x88};
-    uint16_t bytes2[] = {0x00, 0x00, 0xff, 0x88};
-    uint16_t bytes3[] = {0x00, 0xff, 0xff, 0x88};
-    uint16_t bytes4[] = {0xff, 0x00, 0xff, 0x88};
-    uint16_t bytes5[] = {0xff, 0xff, 0x00, 0x88};
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes0);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes1);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes2);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes3);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes4);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, &bytes5);
+    // TODO: Apply the DRY principle below
 
+    // Initialize the texture buffers to the right size
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, bmnx.bm_w, bmnx.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, bmpx.bm_w, bmpx.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, bmny.bm_w, bmny.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, bmpy.bm_w, bmpy.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, bmnz.bm_w, bmnz.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, bmpz.bm_w, bmpz.bm_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    // Copy from the back frame buffer into the cubemap texture
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 0, 0, bmnx.bm_x, canvas.cv_bitmap.bm_h - bmnx.bm_y - bmnx.bm_h, bmnx.bm_w, bmnx.bm_h);
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 0, 0, bmpx.bm_x, canvas.cv_bitmap.bm_h - bmpx.bm_y - bmpx.bm_h, bmpx.bm_w, bmpx.bm_h);
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 0, 0, bmny.bm_x, canvas.cv_bitmap.bm_h - bmny.bm_y - bmny.bm_h, bmny.bm_w, bmny.bm_h);
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 0, 0, bmpy.bm_x, canvas.cv_bitmap.bm_h - bmpy.bm_y - bmpy.bm_h, bmpy.bm_w, bmpy.bm_h);
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 0, 0, bmnz.bm_x, canvas.cv_bitmap.bm_h - bmnz.bm_y - bmnz.bm_h, bmnz.bm_w, bmnz.bm_h);
+    glCopyTexSubImage2DEXT(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 0, 0, bmpz.bm_x, canvas.cv_bitmap.bm_h - bmpz.bm_y - bmpz.bm_h, bmpz.bm_w, bmpz.bm_h);
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1327,14 +1335,11 @@ void g3_draw_cubemap_wideangle(
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    // Draw with the shaders!
     glUseProgram(program_id);
     glEnableVertexAttribArray(a_position_location);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-
+    // TODO: make it work with the other cockpit modes. Possibly related to u_resolution
     glUniform2f(u_resolution_location, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
-    
-    // glViewport(canvas.cv_bitmap.bm_x, canvas.cv_bitmap.bm_y, canvas.cv_bitmap.bm_w, canvas.cv_bitmap.bm_h);
     glUniform1i(u_cubemap_location, cubemap_id);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1342,6 +1347,7 @@ void g3_draw_cubemap_wideangle(
     // Restore OpenGL state
     glUseProgram(original_program_id);
     glBindBuffer(GL_ARRAY_BUFFER, original_array_buffer_id);
+    glReadBuffer(original_read_buffer_id);
     glDisableVertexAttribArray(a_position_location);
   }
 }
