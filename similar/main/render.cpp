@@ -1285,12 +1285,12 @@ void render_wideangle_frame(grs_canvas &canvas, fix eye_offset, window_rendered_
 	gr_init_sub_canvas(canv_face_bottom, canvas, 2 * fs, fs, fs, fs);
 
 	// Render with the correct orientations
-	render_subframe(canv_face_left,   eye_offset, window,  0,   0,  -q);
-	render_subframe(canv_face_front,  eye_offset, window,  0,   0,   0);
-	render_subframe(canv_face_right,  eye_offset, window,  0,   0,   q);
-	render_subframe(canv_face_top,    eye_offset, window, -q,   q,   0);
-	render_subframe(canv_face_back,   eye_offset, window,  0,  -q, 2*q);
-	render_subframe(canv_face_bottom, eye_offset, window,  q,   q,   0);
+	render_subframe(canv_face_left,   eye_offset, window,  0,  2*q,  -q);
+	render_subframe(canv_face_front,  eye_offset, window,  0,  2*q,   0);
+	render_subframe(canv_face_right,  eye_offset, window,  0,  2*q,   q);
+	render_subframe(canv_face_top,    eye_offset, window, -q,  2*q,   0);
+	render_subframe(canv_face_back,   eye_offset, window,  0,  2*q, 2*q);
+	render_subframe(canv_face_bottom, eye_offset, window,  q,  2*q,   0);
 
 	// Set the current canvas to the provided canvas, because that's the end state of the non-wideangle render function.
 	gr_set_current_canvas(canvas);
