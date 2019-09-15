@@ -98,6 +98,7 @@ extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 extern PFNGLUNIFORM2FPROC glUniform2f;
 extern PFNGLUNIFORM1IPROC glUniform1i;
+extern PFNGLCOPYTEXSUBIMAGE2DEXTPROC glCopyTexSubImage2DEXT;
 
 /* Global initialization:
  * will need an OpenGL context and intialize all function pointers.

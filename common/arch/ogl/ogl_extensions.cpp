@@ -53,6 +53,7 @@ PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
 PFNGLUNIFORM2FPROC glUniform2f = NULL;
 PFNGLUNIFORM1IPROC glUniform1i = NULL;
+PFNGLCOPYTEXSUBIMAGE2DEXTPROC glCopyTexSubImage2DEXT = NULL;
 
 /* GL_EXT_texture_filter_anisotropic */
 GLfloat ogl_maxanisotropy = 0.0f;
@@ -191,6 +192,7 @@ void ogl_extensions_init()
     glGetUniformLocation = reinterpret_cast<PFNGLGETUNIFORMLOCATIONPROC>(SDL_GL_GetProcAddress("glGetUniformLocation"));
     glUniform2f = reinterpret_cast<PFNGLUNIFORM2FPROC>(SDL_GL_GetProcAddress("glUniform2f"));
     glUniform1i = reinterpret_cast<PFNGLUNIFORM1IPROC>(SDL_GL_GetProcAddress("glUniform1i"));
+    glCopyTexSubImage2DEXT = reinterpret_cast<PFNGLCOPYTEXSUBIMAGE2DEXTPROC>(SDL_GL_GetProcAddress("glCopyTexSubImage2DEXT"));
   }
   if (glCreateShader && glShaderSource && glCompileShader) { // TODO: check all?
 		ogl_have_shaders=true;
